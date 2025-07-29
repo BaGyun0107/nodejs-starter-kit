@@ -1,0 +1,54 @@
+{
+  "root": true,
+  "env": {
+    "node": true,
+    "es2020": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:prettier/recommended",
+    "prettier",
+    "airbnb-base"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "plugins": ["prettier"],
+  "ignorePatterns": ["node_modules/", "models/", "app.js"],
+  "rules": {
+    "linebreak-style": 0,
+    "comma-dangle": ["error", "never"],
+    /**
+      console을 사용할 수 있게 해주는 기능
+      error => error로 간주
+      warn => warning으로 간주
+      off => 무시
+      배포할 때는 error로 바꿔 console.log를 없애주자
+    */
+    "no-console": ["off", { "allow": ["warn", "error", "info"] }],
+    "no-unused-vars": "off",
+    "no-var": "error",
+    "prefer-const": "error",
+    "camelcase": "off",
+    "consistent-return": "error",
+    "arrow-body-style": ["error", "always"],
+    "spaced-comment": [
+      "error",
+      "always",
+      { "markers": ["-", "+", "?", "!", "*", "/"] }
+    ],
+    "operator-linebreak": ["off", "before"],
+    "no-restricted-syntax": [
+      "off",
+      "FunctionExpression",
+      "WithStatement",
+      "BinaryExpression[operator='in']"
+    ],
+    "no-prototype-builtins": "off",
+    "no-case-declarations": "off",
+    "object-curly-newline": ["off"],
+    "no-undef": "off",
+    "optionalDependencies": true
+  }
+}
