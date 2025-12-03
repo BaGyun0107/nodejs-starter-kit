@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const { DeleteCookie } = require('../../services/auth/CookieUtilSvc');
-const CreateError = require('../../utils/common/Error');
+const createError = require('../../utils/common/Error');
 
 /**
  * 토큰 검증 미들웨어
@@ -39,7 +39,7 @@ const chkToken = async (req, res, next) => {
   try {
     if (!ac && !re) {
       // refreshToken, accessToken 모두 없는 경우
-      throw CreateError(401, '재로그인이 필요합니다!');
+      throw createError(401, '재로그인이 필요합니다!');
     }
 
     if (!ac && re) {

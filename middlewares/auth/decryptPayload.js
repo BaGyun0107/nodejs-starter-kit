@@ -1,5 +1,5 @@
 const { DecryptData } = require('../../utils/common/Encryption');
-const CreateError = require('../../utils/common/Error');
+const createError = require('../../utils/common/Error');
 
 /**
  * 양방향 암호화된 버퍼를 복호화
@@ -35,7 +35,7 @@ const decryptPayload = (req, res, next) => {
     delete req.body.payload;
   } catch (error) {
     // console.error('복호화 처리 중 오류 발생:', error);
-    return next(CreateError(401, '복호화 처리 중 오류 발생'));
+    return next(createError(401, '복호화 처리 중 오류 발생'));
   }
 
   // 다음 미들웨어로 전달
@@ -43,5 +43,5 @@ const decryptPayload = (req, res, next) => {
 };
 
 module.exports = {
-  decryptPayload
+  decryptPayload,
 };

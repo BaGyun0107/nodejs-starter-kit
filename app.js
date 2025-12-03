@@ -56,8 +56,8 @@ app.use(
   morgan(customMorganFormat, {
     // 요청 로그는 400 이상 상태 코드는 로그에 기록하지 않음
     skip: (req, res) => res.statusCode >= 400,
-    stream: accessLog
-  })
+    stream: accessLog,
+  }),
 );
 
 // Morgan 미들웨어 설정 (Error 로그)
@@ -65,8 +65,8 @@ app.use(
   morgan(customMorganFormat, {
     // 에러 로그는 400 미만 상태 코드는 로그에 기록하지 않음
     skip: (req, res) => res.statusCode < 400,
-    stream: errorLog
-  })
+    stream: errorLog,
+  }),
 );
 
 // CORS 설정
@@ -78,7 +78,7 @@ if (env === 'development' || env === 'local') {
   // 개발 환경
   allowedOrigins = [
     'http://localhost:3000',
-    /^https?:\/\/([a-z0-9-]+\.)*{HOST}\.com$/i
+    /^https?:\/\/([a-z0-9-]+\.)*{HOST}\.com$/i,
   ];
 } else {
   // 배포 환경에서는 특정 도메인만 허용
@@ -106,10 +106,10 @@ const corsOptions = {
     'Content-Type',
     'Authorization',
     'X-Access-Token',
-    'X-Refresh-Token'
+    'X-Refresh-Token',
   ], // 허락하고자 하는 헤더
   exposedHeaders: ['content-disposition', 'X-Access-Token', 'X-Refresh-Token'], // 클라이언트에게 응답 헤더로 보낼 수 있는 헤더
-  credentials: true
+  credentials: true,
 };
 
 app.use(cors(corsOptions));
@@ -122,10 +122,10 @@ app.use(
     crossOriginResourcePolicy: false,
     contentSecurityPolicy: {
       directives: {
-        frameAncestors: ["'self'", 'https://{HOST}.com']
-      }
-    }
-  })
+        frameAncestors: ["'self'", 'https://{HOST}.com'],
+      },
+    },
+  }),
 );
 // xss 공격 방지
 app.use(xss());
@@ -139,18 +139,28 @@ if (fs.existsSync(envFilePath)) {
 
 const config = require('./config/config')[env];
 
-// 데이터베이스 연결
-const db = mysql.createConnection({
+// 데이터베이스 연결 풀 사용으로 변경
+const dbPool = mysql.createPool({
   host: config.host,
   user: config.username,
   password: config.password,
-  database: config.database
+  database: config.database,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0,
+  timezone: '+09:00',
 });
-db.connect((err) => {
+
+// 연결 테스트
+dbPool.getConnection((err, connection) => {
   if (err) {
-    console.error(err);
+    console.error('DB 연결 실패:', err);
+    process.exit(1);
   } else {
     console.log('DB 연결 성공');
+    connection.release();
   }
 });
 
@@ -159,6 +169,11 @@ app.use(cookieParser());
 
 // body-parser
 app.use(express.json());
+
+// 헬스체크 엔드포인트를 캐시 미들웨어 전에 배치
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // 라우터
 const routes = require('./routes');
@@ -172,7 +187,7 @@ app.use((err, req, res, next) => {
     return res.status(errorStatus).json({
       success: false,
       status: errorStatus,
-      message: errorMessage
+      message: errorMessage,
     });
   }
 
@@ -181,7 +196,7 @@ app.use((err, req, res, next) => {
     success: false,
     status: errorStatus,
     message: errorMessage,
-    stack: err.stack
+    stack: err.stack,
   });
 });
 
@@ -193,4 +208,4 @@ server.listen(config.port, () => {
 // socketIo(server);
 
 // 서버 종료 처리
-gracefulShutdown(server, db, errorLog);
+gracefulShutdown(server, dbPool, errorLog);

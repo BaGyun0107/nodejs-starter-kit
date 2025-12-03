@@ -2,7 +2,7 @@ const { body } = require('express-validator');
 const {
   requiredValidator,
   requiredObjectValidator,
-  applyPattern
+  applyPattern,
 } = require('./validationUtils');
 const createError = require('../../utils/common/error');
 
@@ -297,7 +297,7 @@ const isFileBody = (field, options = {}) => {
     if (!fileData || (Array.isArray(fileData) && fileData.length === 0)) {
       throw createError(
         400,
-        message || `${field} 파일이 업로드되지 않았습니다.`
+        message || `${field} 파일이 업로드되지 않았습니다.`,
       );
     }
 
@@ -307,7 +307,7 @@ const isFileBody = (field, options = {}) => {
       if (allowedMimeTypes && !allowedMimeTypes.includes(file.mimetype)) {
         throw createError(
           400,
-          message || `${field} 파일 형식이 올바르지 않습니다.`
+          message || `${field} 파일 형식이 올바르지 않습니다.`,
         );
       }
       if (maxSize && file.size > maxSize) {
@@ -329,5 +329,5 @@ module.exports = {
   isArrayBody,
   isObjectBody,
   isFileBody,
-  isObjectArrayBody
+  isObjectArrayBody,
 };

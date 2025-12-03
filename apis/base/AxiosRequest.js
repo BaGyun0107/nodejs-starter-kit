@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const axiosInstance = axios.create({
-  timeout: 60000 // 타임아웃 시간을 60초로 설정
+  timeout: 60000, // 타임아웃 시간을 60초로 설정
 });
 
 /**
@@ -15,7 +15,7 @@ axiosInstance.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 /**
@@ -46,7 +46,7 @@ axiosInstance.interceptors.response.use(
           error.response.data && error.response.data.message
             ? error.response.data.message
             : error.message,
-        originalError: error
+        originalError: error,
       };
 
       const err = new Error(customError.message);
@@ -59,13 +59,14 @@ axiosInstance.interceptors.response.use(
     err.status = 500;
     err.originalError = error;
     return Promise.reject(err);
-  }
+  },
 );
 
 /**
  * @param {string} url - 요청 URL
  * @param {string} method - HTTP 메소드 (GET, POST, PUT, DELETE)
  * @param {object} [options={}] - 옵션 객체
+ * @param {object} [options.method] - HTTP 메소드
  * @param {object} [options.headers] - 헤더 정보
  * @param {object} [options.data] - 요청 데이터
  * @param {string} [options.urlType] - URL 타입 (account, toss)
@@ -79,17 +80,16 @@ axiosInstance.interceptors.response.use(
  * @example
  * const response = await axiosRequest('/api/endpoint', 'POST', { data, headers: {} });
  */
-const AxiosRequest = async (url, method = 'GET', options = {}) => {
+const axiosRequest = async (url, options = {}) => {
   if (!url) throw new Error('url이 필요합니다.');
-  if (!method) throw new Error('method가 필요합니다.');
 
-  const { headers = null, data = null } = options;
+  const { method = 'GET', headers = null, data = null } = options;
 
   const config = {
     method,
     url,
     headers,
-    ...(method.toUpperCase() === 'GET' ? { params: data } : { data })
+    ...(method.toUpperCase() === 'GET' ? { params: data } : { data }),
   };
 
   try {
@@ -101,4 +101,4 @@ const AxiosRequest = async (url, method = 'GET', options = {}) => {
   }
 };
 
-module.exports = AxiosRequest;
+module.exports = axiosRequest;

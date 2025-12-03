@@ -274,7 +274,7 @@ const isOptFileBody = (field, options = {}) => {
       if (allowedMimeTypes && !allowedMimeTypes.includes(file.mimetype)) {
         throw createError(
           400,
-          message || `${field} 파일 형식이 올바르지 않습니다.`
+          message || `${field} 파일 형식이 올바르지 않습니다.`,
         );
       }
       if (maxSize && file.size > maxSize) {
@@ -295,5 +295,5 @@ module.exports = {
   isOptEmailBody,
   isOptArrayBody,
   isOptFileBody,
-  isOptObjectBody
+  isOptObjectBody,
 };

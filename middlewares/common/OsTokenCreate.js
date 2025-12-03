@@ -1,6 +1,6 @@
 const { env } = require('node:process');
 const axios = require('axios');
-const CreateError = require('../../utils/common/Error');
+const createError = require('../../utils/common/Error');
 
 let tokenExpires = '';
 let xAuthToken = '';
@@ -24,15 +24,15 @@ const OsTokenCreate = async (req, res, next) => {
           tenantId: `${env.NHN_TENANT_ID}`,
           passwordCredentials: {
             username: `${env.NHN_USERNAME}`,
-            password: `${env.NHN_PASSWORD}`
-          }
-        }
+            password: `${env.NHN_PASSWORD}`,
+          },
+        },
       },
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+          'Content-Type': 'application/json',
+        },
+      },
     );
 
     tokenExpires = result.data.access.token.expires;
@@ -40,14 +40,14 @@ const OsTokenCreate = async (req, res, next) => {
     xAuthToken = result.data.access.token.id;
 
     if (!result.data) {
-      return next(CreateError(401, 'Object Storage 토큰 생성 실패'));
+      return next(createError(401, 'Object Storage 토큰 생성 실패'));
     }
 
     req.xAuthToken = xAuthToken;
     return next();
   } catch (err) {
     console.error(err);
-    return next(CreateError(500, '서버 에러'));
+    return next(createError(500, '서버 에러'));
   }
 };
 

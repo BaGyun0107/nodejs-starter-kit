@@ -104,5 +104,5 @@ module.exports = {
   optValidator,
   requiredValidator,
   applyPattern,
-  requiredObjectValidator
+  requiredObjectValidator,
 };
