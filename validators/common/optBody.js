@@ -1,289 +1,54 @@
-const { body } = require('express-validator');
-const { optValidator, applyPattern } = require('./validationUtils');
-const createError = require('../../utils/common/error');
+const { createValidator } = require('./validationUtils');
 
 /**
  * [Optional] 문자열 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {RegExp|string} [options.pattern] - 검증할 패턴 (정규 표현식 또는 문자열)
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
  */
-const isOptStringBody = (field, options = {}) => {
-  const { pattern, message, if: ifCondition } = options;
-  const defaultPattern = /^[^<>'"\\;`%{}$]*$/u; // XSS 및 SQL 인젝션 취약 문자들을 제외
-
-  const validatorPattern = pattern || defaultPattern;
-
-  let validator = body(field);
-
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 문자열 검증기
-  validator = validator
-    .isString()
-    .withMessage(`${field}는 문자열이어야 합니다.`);
-
-  // 패턴 검증기
-  validator = applyPattern(validator, validatorPattern, field, message);
-
-  return validator;
-};
+const isOptStringBody = createValidator('body', 'string', true);
 
 /**
  * [Optional] 날짜 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {RegExp|string} [options.pattern] - 검증할 패턴 (정규 표현식 또는 문자열)
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
  */
-const isOptDateBody = (field, options = {}) => {
-  const { pattern, message, if: ifCondition } = options;
-
-  let validator = body(field);
-
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 날짜 검증기
-  validator = validator
-    .isDate()
-    .withMessage(`${field}는 날짜형식이어야 합니다.`);
-
-  if (pattern) {
-    validator = applyPattern(validator, pattern, field, message);
-  }
-
-  return validator;
-};
+const isOptDateBody = createValidator('body', 'date', true);
 
 /**
  * [Optional] 숫자 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {RegExp|string} [options.pattern] - 검증할 패턴 (정규 표현식 또는 문자열)
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
  */
-const isOptNumericBody = (field, options = {}) => {
-  const { pattern, message, if: ifCondition } = options;
-
-  let validator = body(field);
-
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 빈 문자열 및 숫자 패턴 허용
-  validator = validator
-    .matches(/^(?:[0-9]*|)$/)
-    .withMessage(`${field}는 숫자 또는 빈 값이어야 합니다.`);
-
-  if (pattern) {
-    validator = applyPattern(validator, pattern, field, message);
-  }
-
-  return validator;
-};
-
-/**
- * [Optional] 참/거짓 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
- */
-const isOptBooleanBody = (field) => {
-  let validator = body(field);
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 참/거짓 검증기
-  // 불리언 검증기
-  validator = validator.customSanitizer((value) => {
-    if (value === true || value === 'true' || value === 1) return 1;
-    if (value === false || value === 'false' || value === 0) return 0;
-    throw createError(400, `${field}는 참/거짓이어야 합니다.`);
-  });
-
-  return validator;
-};
+const isOptNumericBody = createValidator('body', 'numeric', true);
 
 /**
  * [Optional] 정수 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {RegExp|string} [options.pattern] - 검증할 패턴 (정규 표현식 또는 문자열)
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
  */
-const isOptIntBody = (field, options = {}) => {
-  const { pattern, message, if: ifCondition } = options;
-  const defaultPattern = /^[0-9]*$/;
-
-  const validatorPattern = pattern || defaultPattern;
-
-  let validator = body(field);
-
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 정수 검증기
-  validator = validator
-    .isInt({ min: 0 })
-    .withMessage(`${field}는 0 이상의 정수이어야 합니다.`)
-    .toInt();
-
-  validator = applyPattern(validator, validatorPattern, field, message);
-
-  return validator;
-};
+const isOptIntBody = createValidator('body', 'int', true);
 
 /**
- * 허용되는 값 중 하나인지 검증기
- * @param {string} field - 필드명
- * @param {Array} values - 허용되는 값의 배열
- * @param {object} [options] - 추가 옵션
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
+ * [Optional] 참/거짓 파라미터 검증기
  */
-const isOptInBody = (field, values) => {
-  let validator = body(field);
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 허용되는 값 검증기
-  validator = validator
-    .isIn(values)
-    .withMessage(`${field}는 [${values.join(', ')}] 중 하나여야 합니다.`);
-
-  return validator;
-};
+const isOptBooleanBody = createValidator('body', 'boolean', true);
 
 /**
- * 정수 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
+ * [Optional] 허용되는 값 중 하나인지 검증기
  */
-const isOptEmailBody = (field, options = {}) => {
-  const { if: ifCondition } = options;
-  let validator = body(field);
+const isOptInBody = createValidator('body', 'in', true);
 
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 이메일 검증기
-  validator = validator
-    .isEmail()
-    .withMessage(`${field}는 이메일 형식이어야 합니다.`);
-
-  return validator;
-};
+/**
+ * [Optional] 이메일 파라미터 검증기
+ */
+const isOptEmailBody = createValidator('body', 'email', true);
 
 /**
  * [Optional] 배열 파라미터 검증기
- * @param {string} field - 필드명
- * @returns {object} - Express Validator 체인
  */
-const isOptArrayBody = (field) => {
-  let validator = body(field);
-
-  // Opt 공용 검증기
-  validator = optValidator(validator, field);
-
-  // 배열 검증기
-  validator = validator.isArray().withMessage(`${field}는 배열이어야 합니다.`);
-
-  return validator;
-};
+const isOptArrayBody = createValidator('body', 'array', true);
 
 /**
  * [Optional] 객체 파라미터 검증기
- * @param {string} field - 필드명
- * @param {object} [options] - 추가 옵션
- * @returns {object} - Express Validator 체인
  */
-const isOptObjectBody = (field, options = {}) => {
-  const { if: ifCondition } = options;
-  let validator = body(field);
-
-  if (ifCondition && typeof ifCondition === 'function') {
-    validator = validator.if(ifCondition);
-  }
-
-  // 객체 검증기
-  validator = validator.optional().custom((value) => {
-    if (typeof value !== 'object' || Array.isArray(value) || value === null) {
-      throw createError(400, `${field}는 객체여야 합니다.`);
-    }
-    return true;
-  });
-
-  return validator;
-};
+const isOptObjectBody = createValidator('body', 'object', true);
 
 /**
  * [Optional] 파일 검증 함수
- *
- * @param {string} field - req.files 내에 파일이 들어있는 필드명
- * @param {object} [options] - 추가 옵션
- * @param {string[]} [options.allowedMimeTypes] - 허용할 MIME 타입 배열 (예: ['image/jpeg', 'image/png'])
- * @param {number} [options.maxSize] - 허용할 최대 파일 크기 (바이트 단위)
- * @param {string} [options.message] - 커스텀 에러 메시지
- * @returns {object} - Express Validator 체인
  */
-const isOptFileBody = (field, options = {}) => {
-  const { allowedMimeTypes, maxSize, message } = options;
-  return body(field).custom((value, { req }) => {
-    const fileData = req.files ? req.files[field] : undefined;
-
-    // 파일이 없으면 검증 통과
-    if (!fileData || (Array.isArray(fileData) && fileData.length === 0)) {
-      return true;
-    }
-
-    // 파일이 있다면 배열로 처리하여 각 파일에 대해 검증
-    const files = Array.isArray(fileData) ? fileData : [fileData];
-    for (const file of files) {
-      if (allowedMimeTypes && !allowedMimeTypes.includes(file.mimetype)) {
-        throw createError(
-          400,
-          message || `${field} 파일 형식이 올바르지 않습니다.`,
-        );
-      }
-      if (maxSize && file.size > maxSize) {
-        throw createError(400, message || `${field} 파일 크기가 너무 큽니다.`);
-      }
-    }
-    return true;
-  });
-};
+const isOptFileBody = createValidator('body', 'file', true);
 
 module.exports = {
   isOptStringBody,

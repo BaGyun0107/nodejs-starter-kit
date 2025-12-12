@@ -57,33 +57,35 @@ const gracefulShutdown = (server, dbPool, errorLog, scheduledJobs, io) => {
       }
 
       // 3. HTTP 서버 종료
-      await new Promise((resolve, reject) => {
-        // 타임아웃 설정
-        const timeout = setTimeout(() => {
-          console.log('서버 종료 타임아웃 - 강제 종료 진행');
-          resolve();
-        }, 5000);
-
-        server.close((err) => {
-          clearTimeout(timeout);
-          if (err) {
-            console.error('서버 close 에러:', err);
-            reject(err);
-          } else {
-            console.log('HTTP 서버 종료 완료');
+      if (server) {
+        await new Promise((resolve, reject) => {
+          // 타임아웃 설정
+          const timeout = setTimeout(() => {
+            console.log('서버 종료 타임아웃 - 강제 종료 진행');
             resolve();
+          }, 5000);
+
+          server.close((err) => {
+            clearTimeout(timeout);
+            if (err) {
+              console.error('서버 close 에러:', err);
+              reject(err);
+            } else {
+              console.log('HTTP 서버 종료 완료');
+              resolve();
+            }
+          });
+
+          // 활성 연결 추적 및 종료
+          if (server._connections) {
+            console.log(`활성 연결 수: ${server._connections.size}`);
+            // Keep-alive 연결 강제 종료
+            server._connections.forEach((connection) => {
+              connection.destroy();
+            });
           }
         });
-
-        // 활성 연결 추적 및 종료
-        if (server._connections) {
-          console.log(`활성 연결 수: ${server._connections.size}`);
-          // Keep-alive 연결 강제 종료
-          server._connections.forEach((connection) => {
-            connection.destroy();
-          });
-        }
-      });
+      }
 
       // 4. 데이터베이스 연결 풀 종료
       if (dbPool && dbPool.end) {

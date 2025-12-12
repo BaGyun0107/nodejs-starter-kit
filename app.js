@@ -200,12 +200,38 @@ app.use((err, req, res, next) => {
   });
 });
 
-server.listen(config.port, () => {
-  console.log(`PORT:${config.port} 서버 정상 작동`);
-});
+const port = config.port || 8080;
 
-// // socket 사용 시 주석 해제
-// socketIo(server);
+// 개선된 서버 시작 로직
+async function startServer() {
+  try {
+    // 1. 서버 리스닝 시작
+    await new Promise((resolve, reject) => {
+      server.listen(port, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
 
-// 서버 종료 처리
-gracefulShutdown(server, dbPool, errorLog);
+    console.log(`PORT:${port} 서버 정상 작동`);
+
+    // PM2에 ready 신호 즉시 전송
+    if (process.env.NODE_ENV === 'production' && process.send) {
+      process.send('ready');
+      console.log('PM2 ready 신호 전송 완료');
+    }
+
+    // const io = socketIo(server);
+
+    // 서버 종료 처리
+    gracefulShutdown(server, dbPool, errorLog, '', '', async () => {
+      console.log('[App] 서버 종료 처리 완료');
+    });
+  } catch (error) {
+    console.error('서버 시작 실패:', error);
+    process.exit(1);
+  }
+}
+
+// 서버 시작
+startServer();
