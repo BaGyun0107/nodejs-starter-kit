@@ -10,6 +10,11 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const xss = require('xss-clean');
 
+// 시간 설정
+const dayjs = require('dayjs');
+const utc = require('dayjs/plugin/utc');
+const timezone = require('dayjs/plugin/timezone');
+
 const { accessLog, errorLog } = require('./log-manager');
 
 const { krDate } = require('./utils/common/krDate');
@@ -19,6 +24,14 @@ const http = require('http');
 const app = express();
 const server = http.createServer(app);
 const { socketIo } = require('./utils/common/socketIo');
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+// UTC -> 한국시간으로 변환
+Date.prototype.toJSON = function () {
+  return dayjs(this).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+};
 
 // 배포환경에 따른 설정
 const env = process.env.NODE_ENV || 'local';
@@ -130,6 +143,26 @@ app.use(
 // xss 공격 방지
 app.use(xss());
 
+// HTTP Parameter Pollution 방어
+const hpp = require('hpp');
+app.use(hpp());
+
+// 보안 미들웨어 적용
+const ipFilter = require('./middlewares/security/ipFilter');
+const slowDownLimiter = require('./middlewares/security/slowDown');
+const {
+  globalLimiter,
+  apiKeyLimiter,
+} = require('./middlewares/security/rateLimiter');
+const requestTimeout = require('./middlewares/security/requestTimeout');
+
+// 적용 순서 중요!
+app.use(ipFilter); // 1. IP 차단 (가장 먼저)
+app.use(requestTimeout); // 2. 타임아웃 설정
+app.use(slowDownLimiter); // 3. 점진적 지연
+app.use(globalLimiter); // 4. 전역 Rate Limit
+app.use(apiKeyLimiter); // 5. API Key별 Rate Limit
+
 // 해당 환경의 .env 파일 로드
 const envFilePath = `./.env.${env}`;
 if (fs.existsSync(envFilePath)) {
@@ -150,7 +183,6 @@ const dbPool = mysql.createPool({
   queueLimit: 0,
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
-  timezone: '+09:00',
 });
 
 // 연결 테스트
@@ -167,8 +199,10 @@ dbPool.getConnection((err, connection) => {
 // cookie-parser
 app.use(cookieParser());
 
-// body-parser
-app.use(express.json());
+// body-parser (크기 제한 추가)
+const MAX_REQUEST_SIZE = process.env.MAX_REQUEST_SIZE || '10mb';
+app.use(express.json({ limit: MAX_REQUEST_SIZE }));
+app.use(express.urlencoded({ extended: true, limit: MAX_REQUEST_SIZE }));
 
 // 헬스체크 엔드포인트를 캐시 미들웨어 전에 배치
 app.get('/api/health', (req, res) => {
@@ -205,7 +239,7 @@ const port = config.port || 8080;
 // 개선된 서버 시작 로직
 async function startServer() {
   try {
-    // 1. 서버 리스닝 시작
+    // 서버 리스닝 시작
     await new Promise((resolve, reject) => {
       server.listen(port, (err) => {
         if (err) reject(err);
