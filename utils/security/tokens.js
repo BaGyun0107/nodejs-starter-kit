@@ -11,7 +11,7 @@ const CSRF_TOKEN_SECRET =
 const ACCESS_TOKEN_EXPIRES_IN = '10m';
 const CSRF_TOKEN_EXPIRES_IN = '10m';
 const REFRESH_TOKEN_EXPIRES_IN_DEFAULT = '7d';
-const REFRESH_TOKEN_EXPIRES_IN_LONG = '365d'; // For rememberMe
+const REFRESH_TOKEN_EXPIRES_IN_LONG = '365d';
 
 const generateAccessToken = (payload) => {
   const tokenPayload =
