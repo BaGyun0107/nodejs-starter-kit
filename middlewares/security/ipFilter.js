@@ -33,7 +33,7 @@ const isBlacklisted = (ip) => {
  */
 const addToBlacklist = (ip, duration = 0) => {
   console.warn(
-    `[IP Filter] Adding ${ip} to blacklist${duration ? ` for ${duration}ms` : ' permanently'}`
+    `[IP Filter] Adding ${ip} to blacklist${duration ? ` for ${duration}ms` : ' permanently'}`,
   );
   blacklist.add(ip);
 
@@ -59,7 +59,7 @@ const recordFailure = (ip) => {
     addToBlacklist(ip, banDuration);
     failureCount.delete(ip); // 카운터 리셋
     console.warn(
-      `[IP Filter] IP ${ip} auto-banned after ${count} failures for ${banDuration}ms`
+      `[IP Filter] IP ${ip} auto-banned after ${count} failures for ${banDuration}ms`,
     );
   }
 };
@@ -88,7 +88,7 @@ const ipFilter = (req, res, next) => {
     return res.status(403).json({
       success: false,
       status: 403,
-      message: '접근이 차단되었습니다.'
+      message: '접근이 차단되었습니다.',
     });
   }
 
@@ -103,4 +103,3 @@ ipFilter.isBlacklisted = isBlacklisted;
 ipFilter.blacklist = blacklist; // 관리용
 
 module.exports = ipFilter;
-// trigger restart
